@@ -1,13 +1,51 @@
 # Semantic Search Engine
 
-A generic, local semantic search pipeline over PDFs, meant as a starting point to build a
-search engine for your own corpus or to experiment with one. Ask a question in plain language
-and get back the most relevant documents and paragraphs, cited by section and PDF page.
-Everything runs on your machine; only `make get` touches the network, to download the models.
+Semantic Search Engine is a local pipeline for searching your own PDFs by meaning instead of
+by keyword. You ask a question in plain language. It returns the documents and paragraphs that
+best answer it, each with the document, section and PDF page it came from, so you can check the
+source right away.
+
+It's a starting point, not a finished product: clear, tested, and meant to be adapted.
+
+## Contents
+
+- [How it works](#how-it-works)
+- [What you can use it for](#what-you-can-use-it-for)
+- [Quick start](#quick-start)
+- [Customize ingestion first](#customize-ingestion-first)
+- [Models: why an embedder and a reranker](#models-why-an-embedder-and-a-reranker)
+- [Configuration](#configuration)
+- [Layout](#layout)
+
+## How it works
+
+Everything runs on your own machine. Once the models are downloaded (`make get`), no documents
+or queries leave it. The pipeline has four stages:
 
 ```
 PDFs ─▶ ingest ─▶ parse (docling → markdown) ─▶ index (chunk + embed) ─▶ search (recall + rerank)
 ```
+
+1. **Ingest:** register your PDFs in a small database (SQLite by default, Postgres also works).
+2. **Parse:** convert each PDF to structured markdown with docling, keeping the headings and
+   page numbers.
+3. **Index:** split the text section by section and turn each chunk into a vector with an open
+   embedding model.
+4. **Search:** recall the closest candidates, then rerank them with a cross-encoder that drops
+   weak matches. A question the corpus can't answer returns nothing rather than filler.
+
+## What you can use it for
+
+- Searching a personal library of research papers, reports or manuals
+- Finding passages in policy, regulatory or internal documents when you don't know the exact
+  wording
+- Serving as the retrieval layer of a RAG system, supplying cited passages to a language model
+- Comparing embedding and reranking models on your own data. Both are set in
+  [model.yaml](model.yaml), and chunking and cutoffs in [search.yaml](search.yaml), so no code
+  changes are needed.
+
+Out of the box you copy PDFs into a folder and run a few `make` commands. For a real corpus,
+[write your own ingestion source](#customize-ingestion-first).
 
 ## Quick start
 
