@@ -11,20 +11,38 @@ PDFs ─▶ ingest ─▶ parse (docling → markdown) ─▶ index (chunk + emb
 
 ## Quick start
 
-Needs Python ≥3.12 and [uv](https://docs.astral.sh/uv/).
+Needs Python ≥3.12 and [uv](https://docs.astral.sh/uv/). No documents ship with the repo, so
+the quickest test is one PDF you already have: a paper, a report, a manual. A born-digital PDF
+(text you can select) works best; scanned ones need `OCR=1` on `make parse`.
 
 ```sh
-make sync                         # install dependencies
-make get                          # download the models in model.yaml to models_local/
-mkdir -p data/my-papers && cp ~/some/*.pdf data/my-papers/
-make ingest                       # register data/<collection>/*.pdf in the database
-make parse                        # PDFs -> markdown (LIMIT=0 for all; default 20 per collection)
-make index                        # chunk and embed
-make search Q="your question"     # best documents with their best passages
-make search-paragraph Q="..."     # whole paragraphs, with section and PDF page
+git clone https://github.com/Manteplante/semantic_search_engine.git
+cd semantic_search_engine
+make sync                         # 1. install dependencies
+make get                          # 2. download the models in model.yaml (once, a few GB)
+
+mkdir -p data/example             # 3. a collection is a folder under data/
+cp ~/Downloads/some-report.pdf data/example/
+
+make ingest                       # 4. register data/<collection>/*.pdf in the database
+make parse                        # 5. PDF -> markdown in parsing/output/example/
+make index                        # 6. chunk and embed into search/output/
+make search Q="a question the PDF answers"   # 7. best documents with their best passages
+make search-paragraph Q="..."     #    whole paragraphs, with section and PDF page
 ```
 
-`make help` lists every target, `make hardware` shows whether the models will run on the GPU.
+Things that trip up a first run:
+
+- **The PDF must sit in a collection folder**, `data/<collection>/<file>.pdf`. A PDF dropped
+  straight into `data/` is silently ignored: `make ingest` doesn't count it.
+- **The file name becomes the document id**: letters, digits, `.`, `_` and `-` only, so rename
+  `My Report (final).pdf` to `my-report-final.pdf`. `make ingest` prints `[SKIP]` otherwise.
+- **Ask something the PDF actually covers.** A question with no good match returns nothing
+  rather than filler (see [the reranker](#models-why-an-embedder-and-a-reranker)).
+
+To add more documents, copy them in and re-run steps 4–6: only new or changed PDFs are parsed
+and embedded again. `make help` lists every target, `make hardware` shows whether the models
+will run on the GPU.
 
 ## Customize ingestion first
 
