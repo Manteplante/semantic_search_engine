@@ -1,0 +1,49 @@
+# How the embedder in model.yaml is applied. Edit freely - every key is validated,
+# and `make index` / `make search` pick changes up without code edits.
+
+corpus:
+  # Search works on chunks of each document. Must stay below the embedder's max_length.
+  # The document title and section heading are embedded above each chunk and count
+  # towards this. Any change in this block needs `make index`; `make inspect T=<name>`
+  # prints exactly what the embedder will read.
+  chunk_tokens: 400
+  overlap_tokens: 50
+  # Sections dropped by heading (case-insensitive, chapter numbers ignored):
+  # front and back matter that would only add noise to search. Add the headings
+  # your documents use, in every language they are written in.
+  skip_sections:
+    - Contents
+    - Table of contents
+    - Preface
+    - Foreword
+    - Acknowledgements
+    - Acknowledgments
+    - References
+    - Bibliography
+    - Supplementary Information
+    - Appendix
+  # Lines dropped wherever they appear: case-insensitive regexes, matched against
+  # the stripped line. Captions, tables (mostly leftover tables of contents) and
+  # page furniture carry no meaning for search. Add your corpus's own boilerplate
+  # (running headers, cover-page lines) here.
+  drop_lines:
+    - '^\[?(image|figure|fig\.|table)\s*\d+' # captions, image credits
+    - '^\|' # markdown table rows
+    - '^\d+$' # page numbers
+  # Sections shorter than this after cleaning are dropped: title-page leftovers
+  # and lone epigraphs make vague vectors that match every query a little.
+  min_section_tokens: 30
+  # Paragraphs shorter than this are never shown alone by `make search-paragraph`
+  # (footnote scraps, stray captions); their text still feeds the chunks.
+  min_paragraph_tokens: 20
+
+search:
+  top_k: 5 # documents returned by `make search`, best first
+  passages_per_document: 2 # best-matching passages shown under each document
+  paragraphs: 5 # whole paragraphs returned by `make search-paragraph`, best first
+  # The embedder's best chunks are re-scored by the reranker in model.yaml, which
+  # gives a 0-1 relevance; passages under min_relevance are not shown, so a query
+  # with no good match says so instead of listing filler. 0 candidates = no reranker.
+  rerank_candidates: 50
+  min_relevance: 0.5 # on-topic hits score 0.7-1, unrelated ones under 0.35
+  batch_size: 32 # chunks embedded at once; lower it if the GPU runs out of memory

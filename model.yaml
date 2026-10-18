@@ -1,0 +1,25 @@
+# Which Hugging Face models this project uses, one per role. Changing one is an edit here, then:
+#   make get     (downloads to models_local/ - the only step that uses the network)
+#   make index   (only after changing the embedder: the index is tied to the model that built it)
+# <ROLE>_ID (and <ROLE>_ENGINE) in the environment override this file, e.g. RERANKER_ID.
+
+embedder:
+  id: Qwen/Qwen3-Embedding-0.6B
+  engine: embed
+  about: Multilingual embeddings (100+ languages), decoder-based, 1024 dims
+  max_length: 512
+  # Qwen3-Embedding is a decoder: the text vector is its last token's, not the average.
+  pooling: last
+  # Queries carry a one-line task instruction (in English, per the model card);
+  # passages are embedded as-is. Changing passage_prefix needs `make index`.
+  query_prefix: "Instruct: Given a search query, retrieve passages that answer it\nQuery:"
+  passage_prefix: ""
+
+# Second stage of `make search`: re-scores the embedder's best candidates by reading the
+# question and each passage together, so irrelevant passages can be dropped by a cutoff
+# (search.yaml `min_relevance`). Not used by `make index`.
+reranker:
+  id: BAAI/bge-reranker-v2-m3
+  engine: rerank
+  about: Multilingual cross-encoder scoring question-passage relevance 0-1
+  max_length: 512

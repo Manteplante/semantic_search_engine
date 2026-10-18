@@ -1,0 +1,4 @@
+# Parsed document text is regenerated from the PDFs in data/ - don't commit it.
+*.md
+*.txt
+*.json

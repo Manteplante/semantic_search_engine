@@ -1,0 +1,7 @@
+# Source documents and the database are local data - don't commit them.
+*.pdf
+*.part
+*.csv
+*.parquet
+*.sqlite
+*.sqlite-journal
